@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: travel-image-agent
+infra:
+  provider: microsoft.foundry
+services:
+  foundry-project:
+    host: azure.ai.project
+    endpoint: ${AZURE_AI_PROJECT_ENDPOINT}
+  travel-image-agent:
+    host: azure.ai.agent
+    kind: hosted
+    language: python
+    name: travel-image-agent
+    project: .
+    uses:
+      - foundry-project
+    codeConfiguration:
+      dependencyResolution: remote_build
+      entryPoint: main.py
+      runtime: python_3_13
+    container:
+      resources:
+        cpu: "0.5"
+        memory: 1Gi
+    protocols:
+      - protocol: invocations
+        version: 2.0.0
+    env:
+      AZURE_AI_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT}
+      AZURE_AI_MODEL_DEPLOYMENT_NAME: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+      MAI_IMAGE_ENDPOINT: ${MAI_IMAGE_ENDPOINT}
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL}
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER}
+      IMAGE_URL_TTL_HOURS: ${IMAGE_URL_TTL_HOURS}

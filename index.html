@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>城市旅行手帳 · Share via image</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--cp-bg); color: var(--cp-text); font: 16px/1.65 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    main { max-width: 1280px; margin: auto; padding: 40px 24px 64px; }
+    .eyebrow { color: var(--cp-accent); font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { font-size: clamp(28px, 4vw, 40px); margin: 8px 0; line-height: 1.25; }
+    .intro, .muted { color: var(--cp-text-muted); }
+    a { color: var(--cp-link); }
+    .intro { margin: 0 0 28px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+    .card { border: 1px solid var(--cp-border); border-radius: 16px; background: var(--cp-surface); padding: 28px; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .card-head h2 { font-size: 18px; margin: 0; }
+    .tag { color: var(--cp-accent); background: var(--cp-accent-soft); padding: 4px 12px; border-radius: 0.625rem; font-size: 12px; white-space: nowrap; }
+    #trip-title { font-size: 23px; line-height: 1.5; margin: 0 0 16px; }
+    #trip-meta { background: var(--cp-bg-elevated); border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 12px 16px; margin-bottom: 24px; font-size: 14px; }
+    #trip-meta p { margin: 4px 0; }
+    ol { list-style: none; padding: 0; margin: 0; }
+    li { padding: 0 0 16px 16px; margin: 0 0 16px; border-left: 2px solid var(--cp-border); }
+    li:last-child { padding-bottom: 0; margin-bottom: 0; }
+    li strong { display: block; color: var(--cp-accent); font-size: 14px; }
+    li p { margin: 4px 0 0; font-size: 14px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+    button, .button { font: inherit; font-size: 14px; border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 10px 16px; background: var(--cp-surface); color: var(--cp-text); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    button:hover, .button:hover { background: var(--cp-surface-soft); border-color: var(--cp-border-strong); }
+    button.primary { background: var(--cp-accent); color: var(--cp-accent-fg); border-color: var(--cp-accent); }
+    button.primary:hover { background: var(--cp-accent-hover); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 3px; }
+    textarea { display: block; resize: vertical; width: 100%; min-height: 320px; border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 16px; font: inherit; font-size: 14px; line-height: 1.8; background: var(--cp-bg-elevated); color: var(--cp-text); }
+    label { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+    .draft-footer { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin-top: 8px; color: var(--cp-text-soft); }
+    hr { border: 0; border-top: 1px solid var(--cp-border); margin: 24px 0; }
+    #status { font-size: 14px; margin: 12px 0 0; color: var(--cp-text-muted); }
+    #status.error { color: var(--cp-danger); }
+    #status.success { color: var(--cp-success); }
+    #result { margin-top: 20px; }
+    #storyboard { display: block; width: 100%; height: auto; border-radius: 0.625rem; border: 1px solid var(--cp-border); }
+    .note { font-size: 12px; color: var(--cp-text-soft); margin: 12px 0 0; }
+    #share-status { font-size: 13px; color: var(--cp-text-muted); }
+    [hidden] { display: none !important; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } main { padding: 24px 16px; } .card { padding: 20px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Travel journal · Public example</div>
+    <h1>把行程，變成旅行手帳。</h1>
+    <p class="intro">三天兩夜的城市慢遊，一張手繪故事圖，分享給想一起出發的人。此處為公開虛構範例。</p>
+  </header>
+  <div class="grid">
+    <section class="card" aria-labelledby="preview-title">
+      <div class="card-head"><h2 id="preview-title">行程預覽</h2><span class="tag">靜態範例 · 城市</span></div>
+      <h3 id="trip-title"></h3>
+      <div id="trip-meta"></div>
+      <ol id="trip-days"></ol>
+      <div class="actions"><button id="copy-itinerary" type="button">複製完整行程</button></div>
+    </section>
+    <section class="card" aria-labelledby="draft-title">
+      <div class="card-head"><h2 id="draft-title">Threads 貼文草稿</h2><span class="tag">編輯・複製・分享</span></div>
+      <button id="generate" class="primary" type="button">share via image</button>
+      <p class="note">使用 Foundry + MAI 依日程產生手寫故事圖。產圖時間依服務狀態而異，會產生模型用量費用。</p>
+      <p id="status" role="status" aria-live="polite">按下按鈕後開始產生；不會自動發布到社群。</p>
+      <div id="result" hidden>
+        <img id="storyboard" alt="依城市三天行程生成的手寫旅行故事圖">
+        <div class="actions">
+          <a id="download" class="button" download="travel-storyboard.png">下載 PNG 圖片</a>
+          <a id="instagram-share" class="button" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">share to Instagram</a>
+          <button id="native-share" type="button" hidden>開啟裝置分享</button>
+        </div>
+        <p id="share-status" role="status" aria-live="polite"></p>
+        <p class="note">先下載圖片，再至社群 App 選擇圖片上傳。若裝置支援檔案分享，產生完成後可另外按「開啟裝置分享」。圖片中的細小文字請先校對。</p>
+      </div>
+      <hr>
+      <label for="caption">想和大家分享的旅行靈感</label>
+      <textarea id="caption" maxlength="500">城市慢遊 3天2夜｜公開虛構範例
+
+Day 1｜河岸公園、老街
+Day 2｜美術館、中央花園、午茶
+Day 3｜在地市集、返程
+
+#城市旅行 #慢遊 #旅行手帳</textarea>
+      <div class="draft-footer"><span>草稿可編輯；圖片依左側固定行程產生。</span><span id="char-count"></span></div>
+      <div class="actions">
+        <button id="copy-caption" type="button">複製貼文</button>
+        <a id="threads-draft" class="button" target="_blank" rel="noopener noreferrer">在 Threads 開啟文字草稿</a>
+      </div>
+      <p class="note">Threads 草稿只帶文字；下載 PNG 後，請在 Threads 手動附上圖片。</p>
+      <details class="note">
+        <summary>如何分享到 Instagram / Threads？</summary>
+        <p>Instagram：下載 PNG → 開啟 Instagram App → 建立貼文或限時動態並選擇圖片 → 貼上已複製的文案。此網頁不會直接附圖至 Instagram 或自動發布。</p>
+        <p>Threads：按「在 Threads 開啟文字草稿」，再手動選擇下載的 PNG。裝置分享可用的 App 取決於瀏覽器與裝置。</p>
+        <p>原生 Instagram Stories 整合需 Android / iOS App；自動發布 API 另需 Meta 帳號授權、發布權限與可供 Meta 存取的圖片網址，這個本機範例未實作。</p>
+        <p>官方說明：
+          <a href="https://developers.facebook.com/documentation/threads/threads-web-intents.md/" target="_blank" rel="noopener noreferrer">Threads 文字草稿</a> ·
+          <a href="https://developers.facebook.com/documentation/instagram-platform/sharing-to-stories.md/" target="_blank" rel="noopener noreferrer">Instagram Stories</a> ·
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share" target="_blank" rel="noopener noreferrer">裝置檔案分享</a>
+        </p>
+      </details>
+    </section>
+  </div>
+</main>
+<script id="itinerary-source" type="text/plain">城市慢遊 3天2夜｜公開虛構範例
+
+交通：抵達後搭乘大眾運輸
+步調：每天少量景點，保留休息時間
+住宿：由旅客自行安排，未指定飯店
+Day 1：抵達城市，遊覽河岸公園與老街
+Day 2：參觀美術館，在中央花園散步與午茶
+Day 3：逛在地市集，搭車返程</script>
+<script>
+  const $ = id => document.getElementById(id);
+  const itinerary = $("itinerary-source").textContent.trim();
+  const lines = itinerary.split("\n").filter(line => line.trim());
+  $("trip-title").textContent = lines[0];
+  for (const line of lines.slice(1, 4)) {
+    const p = document.createElement("p"); p.textContent = line; $("trip-meta").append(p);
+  }
+  for (const line of lines.slice(4)) {
+    const split = line.indexOf("：");
+    const li = document.createElement("li"), heading = document.createElement("strong"), p = document.createElement("p");
+    heading.textContent = line.slice(0, split); p.textContent = line.slice(split + 1);
+    li.append(heading, p); $("trip-days").append(li);
+  }
+  const count = () => {
+    $("char-count").textContent = `${[...$("caption").value].length} / 500 字`;
+    const url = new URL("https://www.threads.com/intent/post");
+    url.searchParams.set("text", $("caption").value);
+    $("threads-draft").href = url.href;
+  };
+  $("caption").addEventListener("input", count); count();
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); $("share-status").textContent = "已複製，可到社群 App 貼上。"; $("status").className = ""; $("status").textContent = "已複製文字。"; }
+    catch { $("status").textContent = "無法存取剪貼簿，請選取文字後手動複製。"; $("status").className = "error"; }
+  }
+  $("copy-itinerary").addEventListener("click", () => copyText(itinerary));
+  $("copy-caption").addEventListener("click", () => copyText($("caption").value));
+  let generatedFile = null, imageUrl = null;
+  $("generate").addEventListener("click", async () => {
+    const button = $("generate");
+    button.disabled = true; button.setAttribute("aria-busy", "true");
+    $("status").className = ""; $("status").textContent = "正在產生手寫故事圖，請稍候…";
+    $("result").hidden = true; generatedFile = null;
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Travel-Request": "generate" },
+        body: "{}"
+      });
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(detail.error || `產生失敗（HTTP ${response.status}），請檢查本機服務。`);
+      }
+      const blob = await response.blob();
+      if (blob.type !== "image/png" || !blob.size) throw new Error("回傳格式不是有效的 PNG，請檢查本機服務。");
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+      generatedFile = new File([blob], "travel-storyboard.png", { type: "image/png" });
+      imageUrl = URL.createObjectURL(blob);
+      $("storyboard").src = imageUrl;
+      await $("storyboard").decode();
+      $("download").href = imageUrl;
+      let canShare = false;
+      let shareCheckFailed = false;
+      try { canShare = !!(navigator.canShare && navigator.canShare({ files: [generatedFile] })); }
+      catch { shareCheckFailed = true; }
+      $("native-share").hidden = !canShare;
+      $("share-status").textContent = shareCheckFailed
+        ? "無法檢查裝置檔案分享功能，請下載 PNG 後至社群 App 手動上傳。"
+        : canShare ? "圖片已就緒，請另按按鈕開啟裝置分享。" : "此瀏覽器未提供檔案分享，請下載後至社群 App 上傳。";
+      $("result").hidden = false;
+      $("status").className = "success";
+      $("status").textContent = `圖片已產生 · 1024 × 1024 · ${(blob.size / 1024 / 1024).toFixed(2)} MB`;
+    } catch (error) {
+      $("status").className = "error";
+      $("status").textContent = `${error.message || "連線失敗"} 請確認本機服務與 Azure 登入，再按按鈕重試。`;
+    } finally { button.disabled = false; button.removeAttribute("aria-busy"); }
+  });
+  $("native-share").addEventListener("click", async () => {
+    if (!generatedFile) return;
+    try {
+      await navigator.share({ files: [generatedFile], title: "手寫旅行故事圖" });
+      $("share-status").textContent = "已開啟系統分享，請在目標 App 確認發佈。";
+    } catch (error) {
+      $("share-status").textContent = error.name === "AbortError" ? "已取消分享，仍可下載圖片。" : "裝置分享失敗，請下載圖片後手動上傳。";
+    }
+  });
+  window.addEventListener("beforeunload", () => { if (imageUrl) URL.revokeObjectURL(imageUrl); });
+</script>
+</body>
+</html>

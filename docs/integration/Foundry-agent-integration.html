@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Foundry 旅遊分鏡 Agent 整合指南：行程文字、Entra 驗證、PNG 回應與完整 Python 程式。">
+<title>Foundry 旅遊分鏡 Agent · 應用程式整合指南</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 24px; }
+body { margin: 0; background: var(--cp-bg); color: var(--cp-text); font: 16px/1.85 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+a { color: var(--cp-link); text-underline-offset: 3px; overflow-wrap: anywhere; }
+a:focus-visible, pre:focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 4px; }
+.layout { max-width: 1320px; margin: auto; padding: 48px 32px; display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: 48px; }
+aside { position: sticky; top: 32px; align-self: start; max-height: calc(100vh - 64px); overflow: auto; }
+.mobile-toc { display: none; }
+.eyebrow { color: var(--cp-accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; }
+nav { display: grid; gap: 4px; margin-top: 20px; }
+nav a { color: var(--cp-text-muted); text-decoration: none; padding: 8px 12px; border-radius: .625rem; line-height: 1.6; font-size: 14px; }
+nav a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+main { min-width: 0; background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; padding: 40px; }
+h1 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -.025em; line-height: 1.35; margin: 0 0 16px; }
+h2 { font-size: 23px; line-height: 1.5; margin: 48px 0 16px; padding-top: 24px; border-top: 1px solid var(--cp-border); }
+h3 { font-size: 18px; margin: 28px 0 12px; }
+p { margin: 16px 0; overflow-wrap: anywhere; }
+li { margin: 8px 0; overflow-wrap: anywhere; }
+code { font-family: Consolas, "Courier New", Courier, monospace; font-size: .9em; }
+p code, li code { background: var(--cp-surface-soft); border-radius: 4px; padding: 2px 5px; }
+.code-block { margin: 20px 0; border: 1px solid var(--cp-border); border-radius: .625rem; overflow: hidden; background: var(--cp-surface-soft); }
+figcaption { padding: 8px 16px; border-bottom: 1px solid var(--cp-border); color: var(--cp-text-muted); font: 12px/1.5 Consolas, "Courier New", Courier, monospace; }
+pre { margin: 0; padding: 16px; overflow-x: auto; font-size: 14px; line-height: 1.65; tab-size: 4; }
+pre code { font-size: inherit; }
+.downloads { margin-bottom: 32px; padding: 20px; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-bg-elevated); }
+.downloads p { margin: 0 0 12px; font-size: 14px; color: var(--cp-text-muted); }
+.download { display: inline-block; margin: 4px 8px 4px 0; padding: 8px 12px; border-radius: .625rem; border: 1px solid var(--cp-border-strong); text-decoration: none; font-size: 13px; font-weight: 600; color: var(--cp-accent); }
+.download:hover { background: var(--cp-accent-soft); color: var(--cp-accent-hover); }
+.skip { position: absolute; top: -100px; left: 16px; padding: 8px 16px; background: var(--cp-surface); }
+.skip:focus { top: 8px; }
+footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--cp-border); color: var(--cp-text-muted); font-size: 13px; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); padding: 24px 16px; gap: 24px; }
+  aside { display: none; }
+  .mobile-toc { display: block; padding: 12px 16px; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); }
+  summary { cursor: pointer; color: var(--cp-accent); font-weight: 600; }
+  nav { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 12px; }
+  main { padding: 24px; }
+}
+@media print {
+  body, main { background: var(--cp-surface); }
+  .layout { display: block; padding: 0; max-width: none; }
+  aside, .mobile-toc, .downloads, .skip { display: none; }
+  main { border: 0; padding: 0; }
+  h2, h3 { break-after: avoid; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  a { color: var(--cp-text); }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#guide">跳至文件內容</a>
+<div class="layout"><aside aria-label="文件目錄"><div class="eyebrow">FOUNDRY / INTEGRATION GUIDE</div><nav><a href="#section-1">1. 這份文件適用的服務</a>
+<a href="#section-2">2. 連線設定與請求合約</a>
+<a href="#section-3">3. 成功回應：直接接收圖片</a>
+<a href="#section-4">4. 驗證與權限</a>
+<a href="#section-5">5. 可直接執行的 Python 範例</a>
+<a href="#section-6">6. 其他語言的實作對照</a>
+<a href="#section-7">7. 逾時、重試與錯誤處理</a>
+<a href="#section-8">8. 部署管理與交接</a>
+<a href="#section-9">9. 官方參考</a>
+<a href="#section-10">10. 完整 Python 程式（與隨附檔案一致）</a></nav></aside><details class="mobile-toc"><summary>章節目錄 · 10 節</summary><nav><a href="#section-1">1. 這份文件適用的服務</a>
+<a href="#section-2">2. 連線設定與請求合約</a>
+<a href="#section-3">3. 成功回應：直接接收圖片</a>
+<a href="#section-4">4. 驗證與權限</a>
+<a href="#section-5">5. 可直接執行的 Python 範例</a>
+<a href="#section-6">6. 其他語言的實作對照</a>
+<a href="#section-7">7. 逾時、重試與錯誤處理</a>
+<a href="#section-8">8. 部署管理與交接</a>
+<a href="#section-9">9. 官方參考</a>
+<a href="#section-10">10. 完整 Python 程式（與隨附檔案一致）</a></nav></details><main id="guide"><div class="downloads"><p>單一 HTML · 可離線閱讀。程式與依賴清單已內嵌；請設定自己的端點與租用戶。</p><a class="download" download="generate_travel_image.py" href="data:application/octet-stream;base64,IiIiQ2FsbCB0aGUgZGVwbG95ZWQgRm91bmRyeSB0cmF2ZWwgYWdlbnQgYW5kIHNhdmUgaXRzIGRpcmVjdCBQTkcgcmVzcG9uc2UuIiIiCgppbXBvcnQgYXJncGFyc2UKaW1wb3J0IGhhc2hsaWIKaW1wb3J0IGpzb24KaW1wb3J0IG9zCmltcG9ydCBzeXMKaW1wb3J0IHRpbWUKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmZyb20gdXJsbGliLnBhcnNlIGltcG9ydCB1cmxzcGxpdAoKaW1wb3J0IGh0dHB4CmZyb20gYXp1cmUuY29yZS5leGNlcHRpb25zIGltcG9ydCBDbGllbnRBdXRoZW50aWNhdGlvbkVycm9yCmZyb20gYXp1cmUuaWRlbnRpdHkgaW1wb3J0IEF6dXJlQ2xpQ3JlZGVudGlhbCwgTWFuYWdlZElkZW50aXR5Q3JlZGVudGlhbAoKClNDT1BFID0gImh0dHBzOi8vYWkuYXp1cmUuY29tLy5kZWZhdWx0IgpNQVhfQllURVMgPSAzMCAqIDEwMjQgKiAxMDI0CgoKZGVmIGdlbmVyYXRlX2ltYWdlKGRlc2NyaXB0aW9uLCAqLCBlbmRwb2ludD1Ob25lLCBhdXRoPSJjbGkiLCBjbGllbnRfaWQ9Tm9uZSwgdGVuYW50X2lkPU5vbmUpOgogICAgIiIiUmV0dXJuIHZlcmlmaWVkIFBORyBieXRlcyBhbmQgZXZpZGVuY2U7IG5ldmVyIHVwbG9hZCB0byBCbG9iIFN0b3JhZ2UuIiIiCiAgICBpZiBub3QgZGVzY3JpcHRpb24uc3RyaXAoKSBvciBsZW4oZGVzY3JpcHRpb24pID4gMTIwMDA6CiAgICAgICAgcmFpc2UgVmFsdWVFcnJvcigiUHJvdmlkZSAxIHRvIDEyMDAwIGNoYXJhY3RlcnMgb2YgaXRpbmVyYXJ5IHRleHQuIikKICAgIGVuZHBvaW50ID0gZW5kcG9pbnQgb3Igb3MuZW52aXJvbi5nZXQoIkZPVU5EUllfQUdFTlRfRU5EUE9JTlQiLCAiIikuc3RyaXAoKQogICAgcGFydHMgPSB1cmxzcGxpdChlbmRwb2ludCkKICAgIGlmIHBhcnRzLnNjaGVtZSAhPSAiaHR0cHMiIG9yIG5vdCBwYXJ0cy5ob3N0bmFtZSBvciBwYXJ0cy51c2VybmFtZSBvciBwYXJ0cy5wYXNzd29yZCBvciBwYXJ0cy5mcmFnbWVudDoKICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJTZXQgRk9VTkRSWV9BR0VOVF9FTkRQT0lOVCBvciAtLWVuZHBvaW50IHRvIHlvdXIgSFRUUFMgSW52b2NhdGlvbnMgVVJMLiIpCiAgICBpZiBhdXRoIG5vdCBpbiAoImNsaSIsICJtYW5hZ2VkLWlkZW50aXR5Iik6CiAgICAgICAgcmFpc2UgVmFsdWVFcnJvcigiYXV0aCBtdXN0IGJlIGNsaSBvciBtYW5hZ2VkLWlkZW50aXR5LiIpCiAgICBpZiBjbGllbnRfaWQgYW5kIGF1dGggIT0gIm1hbmFnZWQtaWRlbnRpdHkiOgogICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoImNsaWVudF9pZCBhcHBsaWVzIG9ubHkgdG8gbWFuYWdlZC1pZGVudGl0eSBhdXRoZW50aWNhdGlvbi4iKQogICAgdGVuYW50X2lkID0gdGVuYW50X2lkIG9yIG9zLmVudmlyb24uZ2V0KCJBWlVSRV9URU5BTlRfSUQiLCAiIikuc3RyaXAoKQogICAgaWYgYXV0aCA9PSAiY2xpIiBhbmQgbm90IHRlbmFudF9pZDoKICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJTZXQgQVpVUkVfVEVOQU5UX0lEIG9yIC0tdGVuYW50LWlkIGZvciBBenVyZSBDTEkgYXV0aGVudGljYXRpb24uIikKCiAgICBzdGFydGVkID0gdGltZS5wZXJmX2NvdW50ZXIoKQogICAgY3JlZGVudGlhbCA9ICgKICAgICAgICBBenVyZUNsaUNyZWRlbnRpYWwodGVuYW50X2lkPXRlbmFudF9pZCwgcHJvY2Vzc190aW1lb3V0PTYwKQogICAgICAgIGlmIGF1dGggPT0gImNsaSIKICAgICAgICBlbHNlIE1hbmFnZWRJZGVudGl0eUNyZWRlbnRpYWwoKiooeyJjbGllbnRfaWQiOiBjbGllbnRfaWR9IGlmIGNsaWVudF9pZCBlbHNlIHt9KSkKICAgICkKICAgIHdpdGggY3JlZGVudGlhbCwgaHR0cHguQ2xpZW50KHRpbWVvdXQ9aHR0cHguVGltZW91dCg2MDAsIGNvbm5lY3Q9MjApKSBhcyBjbGllbnQ6CiAgICAgICAgdG9rZW4gPSBjcmVkZW50aWFsLmdldF90b2tlbihTQ09QRSkudG9rZW4KICAgICAgICB3aXRoIGNsaWVudC5zdHJlYW0oCiAgICAgICAgICAgICJQT1NUIiwKICAgICAgICAgICAgZW5kcG9pbnQsCiAgICAgICAgICAgIGhlYWRlcnM9eyJBdXRob3JpemF0aW9uIjogZiJCZWFyZXIge3Rva2VufSIsICJBY2NlcHQiOiAiaW1hZ2UvcG5nIn0sCiAgICAgICAgICAgIGpzb249eyJkZXNjcmlwdGlvbiI6IGRlc2NyaXB0aW9uLCAicmVzcG9uc2VfZm9ybWF0IjogImltYWdlIn0sCiAgICAgICAgKSBhcyByZXNwb25zZToKICAgICAgICAgICAgcmVzcG9uc2UucmFpc2VfZm9yX3N0YXR1cygpCiAgICAgICAgICAgIGlmIHJlc3BvbnNlLmhlYWRlcnMuZ2V0KCJjb250ZW50LXR5cGUiLCAiIikuc3BsaXQoIjsiKVswXSAhPSAiaW1hZ2UvcG5nIjoKICAgICAgICAgICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoIkV4cGVjdGVkIGltYWdlL3BuZywgbm90IEpTT04gb3IgSFRNTC4iKQogICAgICAgICAgICBpbWFnZSA9IGJ5dGVhcnJheSgpCiAgICAgICAgICAgIGZvciBjaHVuayBpbiByZXNwb25zZS5pdGVyX2J5dGVzKCk6CiAgICAgICAgICAgICAgICBpZiBsZW4oaW1hZ2UpICsgbGVuKGNodW5rKSA+IE1BWF9CWVRFUzoKICAgICAgICAgICAgICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJSZXNwb25zZSBleGNlZWRzIHRoaXMgY2xpZW50J3MgMzAgTWlCIGxpbWl0LiIpCiAgICAgICAgICAgICAgICBpbWFnZS5leHRlbmQoY2h1bmspCiAgICAgICAgICAgIGRpZ2VzdCA9IGhhc2hsaWIuc2hhMjU2KGltYWdlKS5oZXhkaWdlc3QoKQogICAgICAgICAgICBpZiBub3QgaW1hZ2Uuc3RhcnRzd2l0aChiIlx4ODlQTkdcclxuXHgxYVxuIik6CiAgICAgICAgICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJSZXNwb25zZSBkb2VzIG5vdCBoYXZlIGEgUE5HIHNpZ25hdHVyZS4iKQogICAgICAgICAgICBpZiByZXNwb25zZS5oZWFkZXJzLmdldCgieC1pbWFnZS1zaGEyNTYiKSAhPSBkaWdlc3Q6CiAgICAgICAgICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJQTkcgaW50ZWdyaXR5IHZlcmlmaWNhdGlvbiBmYWlsZWQuIikKICAgICAgICAgICAgZXZpZGVuY2UgPSB7CiAgICAgICAgICAgICAgICAiaHR0cF9zdGF0dXMiOiByZXNwb25zZS5zdGF0dXNfY29kZSwKICAgICAgICAgICAgICAgICJjb250ZW50X3R5cGUiOiAiaW1hZ2UvcG5nIiwKICAgICAgICAgICAgICAgICJpbWFnZV9ieXRlcyI6IGxlbihpbWFnZSksCiAgICAgICAgICAgICAgICAic2hhMjU2IjogZGlnZXN0LAogICAgICAgICAgICAgICAgImludm9jYXRpb25faWQiOiByZXNwb25zZS5oZWFkZXJzLmdldCgieC1hZ2VudC1pbnZvY2F0aW9uLWlkIiksCiAgICAgICAgICAgICAgICAiZWxhcHNlZF9zZWNvbmRzIjogcm91bmQodGltZS5wZXJmX2NvdW50ZXIoKSAtIHN0YXJ0ZWQsIDIpLAogICAgICAgICAgICB9CiAgICByZXR1cm4gYnl0ZXMoaW1hZ2UpLCBldmlkZW5jZQoKCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj1fX2RvY19fKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgiLS1pbnB1dCIsIHR5cGU9UGF0aCwgcmVxdWlyZWQ9VHJ1ZSwgaGVscD0iVVRGLTggaXRpbmVyYXJ5IGZpbGUiKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgiLS1vdXRwdXQiLCB0eXBlPVBhdGgsIGRlZmF1bHQ9UGF0aCgidHJhdmVsLXN0b3J5Ym9hcmQucG5nIikpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCItLWF1dGgiLCBjaG9pY2VzPSgiY2xpIiwgIm1hbmFnZWQtaWRlbnRpdHkiKSwgZGVmYXVsdD0iY2xpIikKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoIi0tY2xpZW50LWlkIiwgaGVscD0iVXNlci1hc3NpZ25lZCBtYW5hZ2VkIGlkZW50aXR5IGNsaWVudCBJRCIpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCItLWVuZHBvaW50IiwgaGVscD0iSFRUUFMgSW52b2NhdGlvbnMgVVJMOyBkZWZhdWx0cyB0byBGT1VORFJZX0FHRU5UX0VORFBPSU5UIikKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoIi0tdGVuYW50LWlkIiwgaGVscD0iQ0xJIHRlbmFudDsgZGVmYXVsdHMgdG8gQVpVUkVfVEVOQU5UX0lEIikKICAgIGFyZ3MgPSBwYXJzZXIucGFyc2VfYXJncygpCiAgICB0cnk6CiAgICAgICAgaW1hZ2UsIGV2aWRlbmNlID0gZ2VuZXJhdGVfaW1hZ2UoCiAgICAgICAgICAgIGFyZ3MuaW5wdXQucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOC1zaWciKSwKICAgICAgICAgICAgZW5kcG9pbnQ9YXJncy5lbmRwb2ludCwKICAgICAgICAgICAgYXV0aD1hcmdzLmF1dGgsCiAgICAgICAgICAgIGNsaWVudF9pZD1hcmdzLmNsaWVudF9pZCwKICAgICAgICAgICAgdGVuYW50X2lkPWFyZ3MudGVuYW50X2lkLAogICAgICAgICkKICAgICAgICBhcmdzLm91dHB1dC53cml0ZV9ieXRlcyhpbWFnZSkKICAgIGV4Y2VwdCAoQ2xpZW50QXV0aGVudGljYXRpb25FcnJvciwgaHR0cHguSFRUUEVycm9yLCBPU0Vycm9yLCBWYWx1ZUVycm9yKSBhcyBleGM6CiAgICAgICAgcHJpbnQoZiJJbWFnZSBnZW5lcmF0aW9uIGZhaWxlZDoge2V4Y30iLCBmaWxlPXN5cy5zdGRlcnIpCiAgICAgICAgcmV0dXJuIDEKICAgIHByaW50KGpzb24uZHVtcHMoeyoqZXZpZGVuY2UsICJvdXRwdXQiOiBzdHIoYXJncy5vdXRwdXQpfSwgZW5zdXJlX2FzY2lpPUZhbHNlKSkKICAgIHJldHVybiAwCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHJhaXNlIFN5c3RlbUV4aXQobWFpbigpKQo=">下載 generate_travel_image.py</a><a class="download" download="requirements.txt" href="data:application/octet-stream;base64,YXp1cmUtaWRlbnRpdHk+PTEuMTksPDIKaHR0cHg+PTAuMjcsPDEK">下載 requirements.txt</a></div>
+<h1>Foundry 旅遊分鏡 Agent：應用程式整合指南</h1>
+<p>版本日期：2026-11-20</p>
+<h2 id="section-1">1. 這份文件適用的服務</h2>
+<p>其他應用程式傳入 UTF-8 行程文字，由已部署於 Microsoft Foundry 的 <code>travel-image-agent</code> 產生手寫風格旅遊分鏡，直接取得 PNG 圖片。</p>
+<p>此公開範本的內部圖片部署預設為 <code>MAI-Image-2.7-Flash</code>。請使用自己的 Foundry 專案與租用戶設定；本文件沒有提供可共用的服務或帳號。</p>
+<p>應用程式 → Entra 驗證 → Foundry Hosted Agent → 行程提示整理 → MAI 產圖 → PNG 回傳。</p>
+<p>此模式不使用 Blob、公開圖片網址、SAS 或 API key。圖片回傳後，由呼叫端決定儲存、顯示或下載位置。</p>
+<p>這是目前已實作的自訂 Invocations 合約，不是通用 Responses API 範例。請使用下面完整的 agent 呼叫網址；不要把請求送到專案首頁或直接送到 MAI 模型端點。</p>
+<h2 id="section-2">2. 連線設定與請求合約</h2>
+<p>Project endpoint：</p>
+<figure class="code-block"><figcaption>text</figcaption><pre tabindex="0"><code>https://&lt;account&gt;.services.ai.azure.com/api/projects/&lt;project&gt;</code></pre></figure>
+<p>完整呼叫網址（單一 URL）：</p>
+<figure class="code-block"><figcaption>text</figcaption><pre tabindex="0"><code>https://&lt;account&gt;.services.ai.azure.com/api/projects/&lt;project&gt;/agents/travel-image-agent/endpoint/protocols/invocations?api-version=v1</code></pre></figure>
+<p>HTTP 方法：<code>POST</code></p>
+<p>Entra token scope：<code>https://ai.azure.com/.default</code></p>
+<p>請求標頭：</p>
+<figure class="code-block"><figcaption>http</figcaption><pre tabindex="0"><code>Authorization: Bearer &lt;由 Azure Identity 取得的 token&gt;
+Content-Type: application/json
+Accept: image/png</code></pre></figure>
+<p>請求內容：</p>
+<figure class="code-block"><figcaption>json</figcaption><pre tabindex="0"><code>{
+  &quot;description&quot;: &quot;虛構城市 3 天 2 夜。第 1 天河岸公園；第 2 天美術館與花園；第 3 天市集與返程。&quot;,
+  &quot;response_format&quot;: &quot;image&quot;
+}</code></pre></figure>
+<p><code>description</code>：必要字串，不能空白，最多 12,000 個字元。可以包含每日活動、交通、住宿及旅遊偏好。</p>
+<p><code>response_format</code>：本整合固定傳 <code>&quot;image&quot;</code>。省略時，agent 預設會走 <code>&quot;url&quot;</code> 私人 Blob 流程，需要額外的儲存設定、權限與網路連線。</p>
+<p>輸出由 agent 的既有提示決定：依提供的日程產生手寫、墨線與水彩風格分鏡；這個呼叫合約沒有額外的 <code>model</code>、尺寸或風格參數。模型選擇由 agent 部署管理，呼叫端無須直接呼叫 MAI。</p>
+<h2 id="section-3">3. 成功回應：直接接收圖片</h2>
+<p>成功狀態為 HTTP 200，<code>Content-Type</code> 為 <code>image/png</code>，body 是 PNG 二進位資料。</p>
+<p>本 agent 額外回傳：</p>
+<ul>
+<li><code>x-image-sha256</code>：PNG 的 SHA-256，用來檢查下載完整性。</li>
+<li><code>x-agent-invocation-id</code>：追蹤這次執行的識別碼。</li>
+<li><code>Content-Disposition</code>：建議的圖片檔名。</li>
+</ul>
+<p>請使用 <code>response.content</code>、串流或 <code>arrayBuffer()</code> 讀取二進位資料。不要對成功回應呼叫 <code>response.json()</code>，也不需要 Base64 解碼。</p>
+<p>目前 agent 產生 1024 × 1024 PNG。下方範例的 30 MiB 限制是呼叫端保護設定，不是聲稱 Foundry 的通用傳輸上限。</p>
+<h2 id="section-4">4. 驗證與權限</h2>
+<p>本機開發：安裝 Azure CLI，登入有權呼叫這個 agent 的租用戶。需要 MFA 時，請完成登入流程。</p>
+<figure class="code-block"><figcaption>powershell</figcaption><pre tabindex="0"><code>$env:AZURE_TENANT_ID = &quot;&lt;tenant-id&gt;&quot;
+$env:FOUNDRY_AGENT_ENDPOINT = &quot;https://&lt;account&gt;.services.ai.azure.com/api/projects/&lt;project&gt;/agents/travel-image-agent/endpoint/protocols/invocations?api-version=v1&quot;
+az login --tenant $env:AZURE_TENANT_ID</code></pre></figure>
+<p>Python 範例使用 <code>AzureCliCredential</code> 讀取這次登入，不會把 token 寫入檔案、HTML 或瀏覽器儲存空間。</p>
+<p>部署到 Azure：為 App Service、Functions、Container Apps 或其他支援的運算環境啟用 Managed Identity，並讓專案管理員授予該 identity 呼叫 agent 的權限。系統指派 identity 不需要 client ID；使用者指派 identity 則傳入它的 client ID。</p>
+<p>呼叫此端點可使用內建角色 <code>Foundry Agent Consumer</code>，其 data action 為 <code>Microsoft.CognitiveServices/accounts/AIServices/endpoints/interact/action</code>。請管理員在此 Foundry 專案的適當最小範圍授予實際呼叫者；無須為了呼叫而授予模型部署或資源管理權限。</p>
+<p>呼叫者權限與 agent 執行身分是兩層：其他應用程式需要 agent invocation 權限；agent 自己的 Managed Identity 負責呼叫對話模型與 MAI。請勿把既有 agent 的 identity 當作其他應用程式已自動取得的權限。</p>
+<p>本機的 <code>az login</code> 不會替另一台伺服器或另一個 Managed Identity 授權。請管理員在正確租用戶與專案範圍核對實際角色，再由該應用程式測試一次呼叫。</p>
+<p>若採用自訂 <code>AZURE_CONFIG_DIR</code> 登入，執行範例的同一個程序也必須設定相同目錄，否則它會讀取另一個 Azure CLI 登入快取。本整合範例不會自行改動使用者的 CLI 預設設定。</p>
+<p>呼叫 Foundry agent 使用 <code>https://ai.azure.com/.default</code>。agent 內部直接呼叫 MAI 使用的 Cognitive Services token scope 屬於另一層，不要混用。</p>
+<h2 id="section-5">5. 可直接執行的 Python 範例</h2>
+<p>隨附 <code>generate_travel_image.py</code> 是獨立應用程式範例，不需複製整個 agent 專案，也不需先啟動本機 HTML 預覽服務。</p>
+<p>安裝：</p>
+<figure class="code-block"><figcaption>powershell</figcaption><pre tabindex="0"><code>python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt</code></pre></figure>
+<p>將行程以 UTF-8 儲存為 <code>itinerary.txt</code>，然後執行：</p>
+<figure class="code-block"><figcaption>powershell</figcaption><pre tabindex="0"><code>.\.venv\Scripts\python.exe generate_travel_image.py --input itinerary.txt --output travel-storyboard.png --auth cli</code></pre></figure>
+<p>Azure 系統指派 Managed Identity：</p>
+<figure class="code-block"><figcaption>powershell</figcaption><pre tabindex="0"><code>python generate_travel_image.py --input itinerary.txt --output travel-storyboard.png --auth managed-identity</code></pre></figure>
+<p>Azure 使用者指派 Managed Identity：</p>
+<figure class="code-block"><figcaption>powershell</figcaption><pre tabindex="0"><code>python generate_travel_image.py --input itinerary.txt --output travel-storyboard.png --auth managed-identity --client-id &lt;identity-client-id&gt;</code></pre></figure>
+<p>範例使用明確的驗證方式，不會在 Managed Identity 失敗時改用另一個登入身分。請在有 Managed Identity 端點的 Azure 執行環境測試該模式；一般筆電使用 <code>--auth cli</code>。</p>
+<h3>在既有 Python 後端呼叫</h3>
+<p>把隨附範例放進你的後端專案後：</p>
+<figure class="code-block"><figcaption>python</figcaption><pre tabindex="0"><code>from pathlib import Path
+from generate_travel_image import generate_image
+
+itinerary = &quot;虛構城市三天兩夜，依序安排河岸公園、美術館、花園、市集與返程。&quot;
+png_bytes, evidence = generate_image(
+    itinerary,
+    auth=&quot;managed-identity&quot;,
+)
+Path(&quot;storyboard.png&quot;).write_bytes(png_bytes)
+print(evidence[&quot;invocation_id&quot;])</code></pre></figure>
+<p>Web 後端也可以直接把 <code>png_bytes</code> 以 HTTP <code>Content-Type: image/png</code> 回傳前端，而不寫入 Blob。請保留你原本的使用者登入、請求限制與授權檢查。</p>
+<h2 id="section-6">6. 其他語言的實作對照</h2>
+<p>HTTP 合約與程式語言無關。取得正確的 Entra bearer token 後：</p>
+<ul>
+<li>JavaScript / Node.js：<code>fetch()</code> 傳送 JSON；用 <code>await response.arrayBuffer()</code> 取得 PNG。</li>
+<li>C#：<code>HttpClient.PostAsync()</code> 傳送 JSON；用 <code>ReadAsByteArrayAsync()</code> 取得 PNG。</li>
+<li>Python：隨附範例以 <code>httpx</code> 串流接收 PNG，檢查狀態、內容類型、PNG 簽名與 SHA-256，再寫入檔案。</li>
+</ul>
+<p>一般瀏覽器網頁應呼叫自己的已驗證後端，再由後端使用 Managed Identity 呼叫 Foundry。不要把伺服器的 bearer token 或 CLI token 放進 HTML。瀏覽器直接登入 Entra 是另一個需要 app registration、權限與 CORS 設定的設計，本範例未實作。</p>
+<h2 id="section-7">7. 逾時、重試與錯誤處理</h2>
+<p>圖片生成是長時間操作。範例使用 600 秒的 HTTP timeout；你的 Web 後端、反向代理與前端等待設定也需要容許實際的產圖時間。正式系統若有短 HTTP 限制，可另行設計背景工作，但不要把本合約當成已提供工作佇列 API。</p>
+<p>範例沒有自動重試產圖 POST。網路逾時後，伺服器可能仍在產圖；直接重送可能產生第二張圖片及額外用量費用。由使用者確認後重試，並記錄 invocation ID。</p>
+<p>常見診斷：</p>
+<ul>
+<li>401：檢查 token 是否過期、租用戶與 scope 是否正確。</li>
+<li>403：檢查呼叫者的 agent 權限及網路規則。</li>
+<li>404：檢查完整 URL、agent 名稱及部署狀態。</li>
+<li>422：檢查 <code>description</code> 長度及 <code>response_format</code> 值。</li>
+<li>429：可能受到服務速率或容量限制；先檢查回應與服務狀態。</li>
+<li>502：本 agent 以 JSON <code>error</code> 回報內部流程失敗；請記錄錯誤及 invocation ID，檢查對話模型／MAI 驗證與部署。</li>
+</ul>
+<p>不要把非 200 的 JSON／HTML 錯誤儲存為 <code>.png</code>，不要記錄 Authorization 標頭或大量圖片 Base64。</p>
+<h2 id="section-8">8. 部署管理與交接</h2>
+<p>這個 URL 使用 agent endpoint，沒有把特定版本寫進路徑。模型或提示更新後，應由服務擁有者確認 endpoint 實際路由到的 agent 版本，再通知整合方。</p>
+<p>由服務擁有者確認目前 ACTIVE 版本與 endpoint 的流量路由。整合程式不應把管理版本頁面的 <code>/versions/&lt;version&gt;</code> 網址當成呼叫端點。</p>
+<p>整合方不需把 <code>MAI-Image-2.7</code> 或 <code>MAI-Image-2.7-Flash</code> 放進此 agent 的 JSON 請求；那是 agent 內部的部署設定。</p>
+<p>交接清單：確認租用戶與專案、授予應用程式 identity invocation 權限、準備 UTF-8 行程檔、執行隨附 Python 範例、確認 PNG 可開啟、保留 invocation ID，最後再接上自己的前端與授權流程。</p>
+<p>這個文件的 Python CLI 範例與 Managed Identity 分支使用相同 HTTP 合約。以實際測試紀錄區分已完成的 CLI 呼叫與尚未在其他應用程式 identity 下執行的環境設定。</p>
+<h3>驗證範圍與正式交接</h3>
+<p>原始部署與獨立 CLI 範例已完成實際 Foundry → MAI → PNG 呼叫與圖片檢視。此公開版本移除了原始端點、私人行程、執行識別碼與產圖檔案，改用可設定的環境變數；沒有為公開整理再觸發付費產圖。</p>
+<p>請先設定自己的端點與租用戶，再執行一次經授權的實際呼叫。Managed Identity 呼叫端需要在自己的 Azure 運算環境及權限下驗證。可先執行專案測試，檢查直接圖片合約與文件中的程式同步；這些測試不會產圖。</p>
+<h2 id="section-9">9. 官方參考</h2>
+<ul>
+<li>Invoke a hosted agent: <a href="https://learn.microsoft.com/azure/foundry/agents/how-to/invoke-hosted-agent" target="_blank" rel="noopener noreferrer">https://learn.microsoft.com/azure/foundry/agents/how-to/invoke-hosted-agent</a></li>
+<li>Azure Identity for Python: <a href="https://learn.microsoft.com/python/api/overview/azure/identity-readme" target="_blank" rel="noopener noreferrer">https://learn.microsoft.com/python/api/overview/azure/identity-readme</a></li>
+<li>Managed identities: <a href="https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview" target="_blank" rel="noopener noreferrer">https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview</a></li>
+<li>MAI image models: <a href="https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image" target="_blank" rel="noopener noreferrer">https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-mai-image</a></li>
+</ul>
+<h2 id="section-10">10. 完整 Python 程式（與隨附檔案一致）</h2>
+<p>將下列內容儲存為 generate_travel_image.py；依第 5 節安裝依賴及執行。</p>
+<p>端點可由 <code>FOUNDRY_AGENT_ENDPOINT</code> 或 <code>--endpoint</code> 提供；CLI 租用戶可由 <code>AZURE_TENANT_ID</code> 或 <code>--tenant-id</code> 提供。程式不會自動載入 <code>.env</code>。</p>
+<figure class="code-block"><figcaption>python</figcaption><pre tabindex="0"><code>&quot;&quot;&quot;Call the deployed Foundry travel agent and save its direct PNG response.&quot;&quot;&quot;
+
+import argparse
+import hashlib
+import json
+import os
+import sys
+import time
+from pathlib import Path
+from urllib.parse import urlsplit
+
+import httpx
+from azure.core.exceptions import ClientAuthenticationError
+from azure.identity import AzureCliCredential, ManagedIdentityCredential
+
+
+SCOPE = &quot;https://ai.azure.com/.default&quot;
+MAX_BYTES = 30 * 1024 * 1024
+
+
+def generate_image(description, *, endpoint=None, auth=&quot;cli&quot;, client_id=None, tenant_id=None):
+    &quot;&quot;&quot;Return verified PNG bytes and evidence; never upload to Blob Storage.&quot;&quot;&quot;
+    if not description.strip() or len(description) &gt; 12000:
+        raise ValueError(&quot;Provide 1 to 12000 characters of itinerary text.&quot;)
+    endpoint = endpoint or os.environ.get(&quot;FOUNDRY_AGENT_ENDPOINT&quot;, &quot;&quot;).strip()
+    parts = urlsplit(endpoint)
+    if parts.scheme != &quot;https&quot; or not parts.hostname or parts.username or parts.password or parts.fragment:
+        raise ValueError(&quot;Set FOUNDRY_AGENT_ENDPOINT or --endpoint to your HTTPS Invocations URL.&quot;)
+    if auth not in (&quot;cli&quot;, &quot;managed-identity&quot;):
+        raise ValueError(&quot;auth must be cli or managed-identity.&quot;)
+    if client_id and auth != &quot;managed-identity&quot;:
+        raise ValueError(&quot;client_id applies only to managed-identity authentication.&quot;)
+    tenant_id = tenant_id or os.environ.get(&quot;AZURE_TENANT_ID&quot;, &quot;&quot;).strip()
+    if auth == &quot;cli&quot; and not tenant_id:
+        raise ValueError(&quot;Set AZURE_TENANT_ID or --tenant-id for Azure CLI authentication.&quot;)
+
+    started = time.perf_counter()
+    credential = (
+        AzureCliCredential(tenant_id=tenant_id, process_timeout=60)
+        if auth == &quot;cli&quot;
+        else ManagedIdentityCredential(**({&quot;client_id&quot;: client_id} if client_id else {}))
+    )
+    with credential, httpx.Client(timeout=httpx.Timeout(600, connect=20)) as client:
+        token = credential.get_token(SCOPE).token
+        with client.stream(
+            &quot;POST&quot;,
+            endpoint,
+            headers={&quot;Authorization&quot;: f&quot;Bearer {token}&quot;, &quot;Accept&quot;: &quot;image/png&quot;},
+            json={&quot;description&quot;: description, &quot;response_format&quot;: &quot;image&quot;},
+        ) as response:
+            response.raise_for_status()
+            if response.headers.get(&quot;content-type&quot;, &quot;&quot;).split(&quot;;&quot;)[0] != &quot;image/png&quot;:
+                raise ValueError(&quot;Expected image/png, not JSON or HTML.&quot;)
+            image = bytearray()
+            for chunk in response.iter_bytes():
+                if len(image) + len(chunk) &gt; MAX_BYTES:
+                    raise ValueError(&quot;Response exceeds this client&#x27;s 30 MiB limit.&quot;)
+                image.extend(chunk)
+            digest = hashlib.sha256(image).hexdigest()
+            if not image.startswith(b&quot;\x89PNG\r\n\x1a\n&quot;):
+                raise ValueError(&quot;Response does not have a PNG signature.&quot;)
+            if response.headers.get(&quot;x-image-sha256&quot;) != digest:
+                raise ValueError(&quot;PNG integrity verification failed.&quot;)
+            evidence = {
+                &quot;http_status&quot;: response.status_code,
+                &quot;content_type&quot;: &quot;image/png&quot;,
+                &quot;image_bytes&quot;: len(image),
+                &quot;sha256&quot;: digest,
+                &quot;invocation_id&quot;: response.headers.get(&quot;x-agent-invocation-id&quot;),
+                &quot;elapsed_seconds&quot;: round(time.perf_counter() - started, 2),
+            }
+    return bytes(image), evidence
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(&quot;--input&quot;, type=Path, required=True, help=&quot;UTF-8 itinerary file&quot;)
+    parser.add_argument(&quot;--output&quot;, type=Path, default=Path(&quot;travel-storyboard.png&quot;))
+    parser.add_argument(&quot;--auth&quot;, choices=(&quot;cli&quot;, &quot;managed-identity&quot;), default=&quot;cli&quot;)
+    parser.add_argument(&quot;--client-id&quot;, help=&quot;User-assigned managed identity client ID&quot;)
+    parser.add_argument(&quot;--endpoint&quot;, help=&quot;HTTPS Invocations URL; defaults to FOUNDRY_AGENT_ENDPOINT&quot;)
+    parser.add_argument(&quot;--tenant-id&quot;, help=&quot;CLI tenant; defaults to AZURE_TENANT_ID&quot;)
+    args = parser.parse_args()
+    try:
+        image, evidence = generate_image(
+            args.input.read_text(encoding=&quot;utf-8-sig&quot;),
+            endpoint=args.endpoint,
+            auth=args.auth,
+            client_id=args.client_id,
+            tenant_id=args.tenant_id,
+        )
+        args.output.write_bytes(image)
+    except (ClientAuthenticationError, httpx.HTTPError, OSError, ValueError) as exc:
+        print(f&quot;Image generation failed: {exc}&quot;, file=sys.stderr)
+        return 1
+    print(json.dumps({**evidence, &quot;output&quot;: str(args.output)}, ensure_ascii=False))
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    raise SystemExit(main())</code></pre></figure><footer>本頁不會發出產圖請求。外部參考與執行程式需要網路。</footer></main></div></body></html>
